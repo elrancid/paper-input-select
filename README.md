@@ -1,3 +1,11 @@
+paper-input-select
+===================
+
+paper-input-select is an advanced paper-dropdown-menu.
+
+WARNING! In development. Not ready.
+
+---
 
 <!---
 
@@ -58,5 +66,3 @@ Custom property | Description | Default
 You can also use any of the `paper-input-container` and `paper-menu-button`
 style mixins and custom properties to style the internal input and menu button
 respectively.
-
-

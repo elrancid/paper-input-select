@@ -1,9 +1,10 @@
 {
-  "name": "paper-dropdown-menu",
+  "name": "paper-input-select",
   "version": "1.0.5",
   "description": "An element that works similarly to a native browser select",
   "authors": [
-    "The Polymer Authors"
+    "The Polymer Authors",
+    "Davide Zeffiro <elrancid@gmail.com>"
   ],
   "keywords": [
     "web-components",
@@ -16,10 +17,10 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "git://github.com/PolymerElements/paper-dropdown-menu"
+    "url": "git://github.com/elrancid/paper-input-select"
   },
   "license": "http://polymer.github.io/LICENSE.txt",
-  "homepage": "https://github.com/PolymerElements/paper-dropdown-menu",
+  "homepage": "https://github.com/elrancid/paper-input-select",
   "dependencies": {
     "polymer": "polymer/polymer#^1.0.0",
     "iron-a11y-keys-behavior": "polymerelements/iron-a11y-keys-behavior#^1.0.0",
