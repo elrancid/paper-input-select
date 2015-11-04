@@ -13,7 +13,7 @@
     "dropdown",
     "select"
   ],
-  "main": "paper-dropdown-menu.html",
+  "main": "paper-input-select.html",
   "private": true,
   "repository": {
     "type": "git",
