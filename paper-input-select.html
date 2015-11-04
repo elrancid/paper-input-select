@@ -11,7 +11,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../paper-styles/default-theme.html">
 <link rel="import" href="../paper-input/paper-input.html">
-<link rel="import" href="../paper-menu-button/paper-menu-button.html">
+<!--<link rel="import" href="../paper-menu-button/paper-menu-button.html">-->
 <link rel="import" href="../paper-ripple/paper-ripple.html">
 <link rel="import" href="../iron-a11y-keys-behavior/iron-a11y-keys-behavior.html">
 <link rel="import" href="../iron-behaviors/iron-control-state.html">
@@ -21,6 +21,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../iron-selector/iron-selectable.html">
 <link rel="import" href="../iron-form-element-behavior/iron-form-element-behavior.html">
 <link rel="import" href="../iron-validatable-behavior/iron-validatable-behavior.html">
+
+<link rel="import" href="../paper-input-select-menu-button/paper-input-select-menu-button.html">
+<link rel="import" href="../paper-input-select-menu/paper-input-select-menu.html">
+<link rel="import" href="../iron-dropdown/iron-dropdown-scroll-manager.html">
 
 <!--
 paper-input-select
@@ -82,7 +86,7 @@ respectively.
 @demo demo/index.html
 -->
 
-<dom-module id="paper-dropdown-menu">
+<dom-module id="paper-input-select">
   <style>
     :host {
       display: inline-block;
@@ -105,11 +109,11 @@ respectively.
         cursor: pointer;
       };
 
-      @apply(--paper-dropdown-menu);
+      @apply(--paper-input-select);
     }
 
     :host([disabled]) {
-      @apply(--paper-dropdown-menu-disabled);
+      @apply(--paper-input-select-disabled);
     }
 
     :host([noink]) paper-ripple {
@@ -126,53 +130,60 @@ respectively.
       bottom: 8px;
       right: 0px;
 
-      @apply(--paper-dropdown-menu-ripple);
+      @apply(--paper-input-select-ripple);
     }
 
     paper-menu-button {
       display: block;
       padding: 0;
-      @apply(--paper-dropdown-menu-button);
+      @apply(--paper-input-select-button);
     }
 
     paper-input {
-      @apply(--paper-dropdown-menu-input);
+      @apply(--paper-input-select-input);
     }
 
     iron-icon {
       color: var(--disabled-text-color);
 
-      @apply(--paper-dropdown-menu-icon);
+      @apply(--paper-input-select-icon);
     }
 
   </style>
   <template>
-    <paper-menu-button
+    <paper-input-select-menu-button
       id="menuButton"
       vertical-align="top"
-      horizontal-align="right"
+      horizontal-align="left"
       vertical-offset="[[_computeMenuVerticalOffset(noLabelFloat)]]"
       disabled="[[disabled]]"
       no-animations="[[noAnimations]]"
       on-iron-select="_onIronSelect"
       on-iron-deselect="_onIronDeselect"
-      opened="{{opened}}">
+      opened="{{opened}}"
+      focus-target="[[_focusTarget]]">
       <div class="dropdown-trigger">
-        <paper-ripple></paper-ripple>
+<!--        <paper-ripple></paper-ripple>-->
         <paper-input
           invalid="[[invalid]]"
-          readonly
+          id="inputSelect"
           disabled="[[disabled]]"
-          value="[[selectedItemLabel]]"
+          value="{{selectedItemLabel}}"
           placeholder="[[placeholder]]"
           always-float-label="[[alwaysFloatLabel]]"
           no-label-float="[[noLabelFloat]]"
-          label="[[label]]">
+          label="[[label]]"
+          on-focus="open">
           <iron-icon icon="arrow-drop-down" suffix></iron-icon>
         </paper-input>
       </div>
-      <content id="content" select=".dropdown-content"></content>
-    </paper-menu-button>
+<!--      <content id="content" select=".dropdown-content"></content>-->
+      <paper-input-select-menu id="inputSelectMenu" class="dropdown-content">
+        <template is="dom-repeat" items="[[filteredListSelect]]" as="item">
+          <paper-item value="[[item.value]]">[[item.label]]</paper-item>
+        </template>
+      </paper-input-select-menu>
+    </paper-input-select-menu-button>
   </template>
 </dom-module>
 <script>
@@ -180,7 +191,7 @@ respectively.
     'use strict';
 
     Polymer({
-      is: 'paper-dropdown-menu',
+      is: 'paper-input-select',
 
       /**
        * Fired when the dropdown opens.
@@ -210,7 +221,8 @@ respectively.
         selectedItemLabel: {
           type: String,
           notify: true,
-          readOnly: true
+          readOnly: true,
+          observer: 'selectedItemLabelChanged'
         },
 
         /**
@@ -223,7 +235,8 @@ respectively.
         selectedItem: {
           type: Object,
           notify: true,
-          readOnly: true
+          readOnly: true,
+          observer: 'selectedItemChanged'
         },
 
         /**
@@ -234,7 +247,9 @@ respectively.
         value: {
           type: String,
           notify: true,
-          readOnly: true
+          readOnly: true,
+//          computed: '_computeValue(selectedItem)',
+          observer: 'valueChanged'
         },
 
         /**
@@ -257,7 +272,8 @@ respectively.
         opened: {
           type: Boolean,
           notify: true,
-          value: false
+          value: false,
+          observer: '_openedChanged'
         },
 
         /**
@@ -286,16 +302,51 @@ respectively.
         noAnimations: {
           type: Boolean,
           value: false
+        },
+
+
+        /**
+         * rancid
+         */
+        listSelect: {
+          type: Array,
+          observer: 'listSelectChanged'
+        },
+        /**
+         * rancid
+         */
+        filteredListSelect: {
+          type: Array
+//          observer: 'filteredListSelectChanged'
+        },
+
+        _shiftTabPressed: {
+          type: Boolean,
+          value: false
+        },
+
+        _focusTarget: {
+          type: Object
+        },
+
+        inputSelectMenu: {
+          type: Object
         }
       },
 
       listeners: {
-        'tap': '_onTap'
+        'tap': '_onTap',
+        'keydown': '_onKeydown' // new
       },
 
       keyBindings: {
-        'up down': 'open',
-        'esc': 'close'
+//        'up down': 'open',
+//        'esc': 'close'
+        'up': '_onUpKey',
+        'down': '_onDownKey',
+        'esc': '_onEscKey',
+        'enter:keydown': '_onEnterKey',
+        'shift+tab:keydown': '_onShiftTabDown'
       },
 
       hostAttributes: {
@@ -307,6 +358,131 @@ respectively.
         '_selectedItemChanged(selectedItem)'
       ],
 
+      selectedItemLabelChanged: function(to, from) {
+        console.log('paper-input-select.selectedItemLabelChanged() **** to:',to);
+        this.filterListSelect(this.selectedItemLabel);
+      },
+      valueChanged: function(to, from) {
+        console.log('paper-input-select.valueChanged() **** to:',to);
+        this.filterListSelect();
+      },
+      listSelectChanged: function(to, from) {
+//        console.debug('paper-input-select.listSelectChanged() to:',to);
+        this.filterListSelect(this.selectedItemLabel);
+      },
+      filterListSelect: function(filterValue) {
+        if (!filterValue) filterValue = '';
+        var filter = new RegExp(filterValue, 'i');
+        var arr = [];
+        for (var i=0; i<this.listSelect.length; i++) {
+          if (this.listSelect[i].label.search(filter) >= 0) arr.push(this.listSelect[i]);
+        }
+        this.filteredListSelect = arr;
+      },
+
+      selectedItemChanged: function(to, from) {
+        console.log('paper-input-select.selectedItemChanged() **** to:',to);
+      },
+
+      _openedChanged: function(opened, oldOpened) {
+        console.debug('paper-input-select._openedChanged() ****** opened:',opened);
+        if (opened) {
+          this.inputSelectMenu._onFocus();
+          //_setActivedItem()
+//          this.fire('paper-dropdown-open');
+        } else if (oldOpened != null) {
+//          this.fire('paper-dropdown-close');
+        }
+      },
+
+      _onShiftTabDown: function(event) { // new
+        console.log('paper-input-select._onShiftTabDown()');
+        this._shiftTabPressed = true;
+        this.inputSelectMenu._onShiftTabDown();
+      },
+
+      _onFocus: function(event) { // new
+        console.log('paper-input-select._onFocus()');
+  //      if (Polymer.PaperInputSelectBehaviorImpl._shiftTabPressed) {
+  //        return;
+  //      }
+  /*
+        // do not focus the menu itself
+        this.blur();
+        // clear the cached focus item
+        this._setFocusedItem(null);
+        this._defaultFocusAsync = this.async(function() {
+          // focus the selected item when the menu receives focus, or the first item
+          // if no item is selected
+          var selectedItem = this.selectedItem;
+          if (selectedItem) {
+            this._setFocusedItem(selectedItem);
+          } else {
+            this._setFocusedItem(this.items[0]);
+          }
+        // async 100ms to wait for `select` to get called from `_itemActivate`
+        }, 100);
+  */
+        this.open();
+      },
+
+      _onUpKey: function(event) { // new
+//        console.log('paper-input-select-behavior('+this.localName+')._onUpKey()');
+        // up and down arrows moves the focus
+  //      this._focusPrevious();
+        this.open();
+        this.inputSelectMenu._onUpKey();
+      },
+
+      _onDownKey: function(event) { // new
+//        console.log('paper-input-select-behavior('+this.localName+')._onDownKey()');
+  //      this._focusNext();
+        this.open();
+        this.inputSelectMenu._onDownKey();
+//        console.log('paper-input-select-behavior._onDownKey() inputSelectMenu.scrollTop:',inputSelectMenu.scrollTop);
+//        console.log('paper-input-select-behavior._onDownKey() inputSelectMenu.scrollHeight:',inputSelectMenu.scrollHeight);
+//        console.log('paper-input-select-behavior._onDownKey() inputSelectMenu.parentNode.scrollTop:',inputSelectMenu.parentNode.scrollTop);
+//        console.log('paper-input-select-behavior._onDownKey() inputSelectMenu.parentNode.scrollHeight:',inputSelectMenu.parentNode.scrollHeight);
+//        console.log('paper-input-select-behavior._onDownKey() inputSelectMenu.parentNode:',inputSelectMenu.parentNode);
+//        console.log('paper-input-select-behavior._onDownKey() inputSelectMenu.parentNode.parentNode:',inputSelectMenu.parentNode.parentNode);
+//          inputSelectMenu.parentNode.scrollTop = inputSelectMenu.parentNode.scrollTop + 10;
+      },
+
+      _onEscKey: function(event) { // new
+        console.log('paper-input-select._onEscKey()');
+        // esc blurs the control
+  //      this.focusedItem.blur();
+        this.inputSelectMenu._onEscKey();
+        this.close();
+      },
+
+      _onEnterKey: function(event) { // new
+        console.log('paper-input-select._onEnterKey()');
+        if (this.opened) {
+          this._closedDropdown = true;
+  //        this.inputSelectMenu._applySelection(this.selectedItem, true);
+          this.inputSelectMenu.setActiveSelected();
+          event.preventDefault();
+        }
+        else this.open();
+      },
+
+      _onKeydown: function(event) { // new
+//        console.log('paper-input-select._onKeydown() selectedItemLabel:',selectedItemLabel);
+//        if (this.keyboardEventMatchesKeys(event, 'up down esc')) {
+//          console.log('paper-input-select-behavior('+this.localName+')._onKeydown() keyboardEventMatchesKeys up down esc');
+//          return;
+//        }
+        // all other keys focus the menu item starting with that character
+//        this._focusWithKeyboardEvent(event);
+      },
+
+//      getInputSelect: function() {
+//      get focusTarget() {
+//        console.log('iron-input-select.get focusTarget... $.inputSelect:',this.$.inputSelect);
+//        return this.$.inputSelect;
+//      },
+
       attached: function() {
         // NOTE(cdata): Due to timing, a preselected value in a `IronSelectable`
         // child will cause an `iron-select` event to fire while the element is
@@ -316,6 +492,10 @@ respectively.
         if (contentElement && contentElement.selectedItem) {
           this._setSelectedItem(contentElement.selectedItem);
         }
+//        console.log('iron-input-select.attached() $.inputSelect:',this.$.inputSelect);
+        this._focusTarget = this.$.inputSelect;
+//        this.inputSelectMenu = this.$.inputSelectMenu.parentNode;
+        this.inputSelectMenu = this.$.inputSelectMenu;
       },
 
       /**
@@ -329,14 +509,27 @@ respectively.
        * Show the dropdown content.
        */
       open: function() {
-        this.$.menuButton.open();
+//        console.debug('paper-input-select.open()');
+        if (!this.opened) {
+          console.debug('paper-input-select.open() OK');
+          if (!this.allowOutsideScroll) {
+            Polymer.IronDropdownScrollManager.pushScrollLock(this);
+          }
+//          this.$.menuButton.open();
+          this.opened = true;
+        }
       },
 
       /**
        * Hide the dropdown content.
        */
       close: function() {
-        this.$.menuButton.close();
+        console.debug('paper-input-select.close()');
+        if (this.opened) {
+          console.debug('paper-input-select.close() OK');
+          Polymer.IronDropdownScrollManager.removeScrollLock(this);
+          this.$.menuButton.close();
+        }
       },
 
       /**
@@ -345,7 +538,12 @@ respectively.
        * @param {CustomEvent} event An `iron-select` event.
        */
       _onIronSelect: function(event) {
+        console.trace('paper-input-select._onIronSelect() *** event.detail.item:',event.detail.item);
+//        console.trace('paper-input-select._onIronSelect() *1* this.selectedItem:',this.selectedItem);
         this._setSelectedItem(event.detail.item);
+//        console.trace('paper-input-select._onIronSelect() *2* this.selectedItem:',this.selectedItem);
+//        console.trace('paper-input-select._onIronSelect() --- this.selectedItemLabel:',this.selectedItemLabel);
+//        console.trace('paper-input-select._onIronSelect() --- this.selectedItemValue:',this.selectedItemValue);
       },
 
       /**
@@ -354,6 +552,7 @@ respectively.
        * @param {CustomEvent} event An `iron-deselect` event.
        */
       _onIronDeselect: function(event) {
+        console.debug('paper-input-select._onIronDeselect()');
         this._setSelectedItem(null);
       },
 
@@ -363,9 +562,17 @@ respectively.
        * @param {CustomEvent} event A tap event.
        */
       _onTap: function(event) {
-        if (Polymer.Gestures.findOriginalTarget(event) === this) {
-          this.open();
+//        console.trace('paper-input-select._onTap() this._closedDropdown:',this._closedDropdown);
+        if (!this._closedDropdown) {
+//          console.trace('paper-input-select._onTap() ...apro...');
+          if (Polymer.Gestures.findOriginalTarget(event) === this) {
+            this.open();
+          }
         }
+        else this.async(function() {
+//          console.trace('paper-input-select._onTap() imposto _closedDropdown a false con metodo async. this:',this);
+          this._closedDropdown = false;
+        }, 1);
       },
 
       /**
@@ -375,7 +582,7 @@ respectively.
        * optional `label` property.
        */
       _selectedItemChanged: function(selectedItem) {
-        var value = '';
+/*        var value = '';
         if (!selectedItem) {
           value = '';
         } else {
@@ -384,6 +591,12 @@ respectively.
 
         this._setValue(value);
         this._setSelectedItemLabel(value);
+*/
+        console.trace('paper-input-select._selectedItemChanged() selectedItem:',selectedItem);
+        if (selectedItem) {
+          this.selectedItemLabel = selectedItem.label || selectedItem.textContent.trim();
+          this._setValue(selectedItem.value);
+        }
       },
 
       /**
@@ -398,7 +611,8 @@ respectively.
         // derived from the metrics of elements internal to `paper-input`'s
         // template. The metrics will change depending on whether or not the
         // input has a floating label.
-        return noLabelFloat ? -4 : 8;
+//        return noLabelFloat ? -4 : 8;
+        return noLabelFloat ? 42 : 62;
       },
 
       /**
