@@ -151,6 +151,8 @@ respectively.
 
   </style>
   <template>
+    <!-- this div fulfills an a11y requirement for combobox, do not remove -->
+    <div role="button"></div>
     <paper-input-select-menu-button
       id="menuButton"
       vertical-align="top"
@@ -164,7 +166,9 @@ respectively.
       focus-target="[[_focusTarget]]">
       <div class="dropdown-trigger">
 <!--        <paper-ripple></paper-ripple>-->
+        <!-- paper-input has type="text" for a11y, do not remove -->
         <paper-input
+          type="text"
           invalid="[[invalid]]"
           id="inputSelect"
           disabled="[[disabled]]"
@@ -350,7 +354,8 @@ respectively.
       },
 
       hostAttributes: {
-        role: 'group',
+        role: 'combobox',
+        'aria-autocomplete': 'none',
         'aria-haspopup': 'true'
       },
 
@@ -623,6 +628,14 @@ respectively.
        */
       _getValidity: function() {
         return this.disabled || !this.required || (this.required && this.value);
+      },
+
+      _openedChanged: function() {
+        var openState = this.opened ? 'true' : 'false';
+        var e = this.contentElement;
+        if (e) {
+          e.setAttribute('aria-expanded', openState);
+        }
       }
     });
   })();
